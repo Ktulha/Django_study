@@ -20,10 +20,8 @@ class Warehouse(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
-
-
-class Accumulation(models.Model):
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    warehouse = models.ForeignKey(
+        Warehouse,  related_name='products', on_delete=models.CASCADE)
+    supplier = models.ForeignKey(
+        ApiUser, related_name='products', on_delete=models.SET_NULL, null=True)
     amount = models.PositiveIntegerField()
