@@ -1,6 +1,6 @@
 from rest_framework import serializers, validators
 
-from api.models import ApiUser, Product,  Warehouse
+from api.models import ApiUser, Product, Stock, Transaction,  Warehouse
 
 API_USER_TYPES = [
     ('consumer', 'Consumer'),
@@ -32,6 +32,24 @@ class UserSerializer(serializers.Serializer):
         return user
 
 
+class ShortUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApiUser
+        fields = ['id', 'username']
+
+
+class ShortWarehouseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Warehouse
+        fields = ['id', 'name']
+
+
+class ShortProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name']
+
+
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
@@ -44,3 +62,33 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
         extra_kwargs = {"id": {"read_only": True}}
+
+
+class StockSerializer(serializers.ModelSerializer):
+    product = ShortProductSerializer(read_only=True)
+    warehouse = ShortWarehouseSerializer(read_only=True)
+
+    class Meta:
+        model = Stock
+        fields = ['id', 'product', 'warehouse', 'quantity']
+        extra_kwargs = {"id": {"read_only": True}}
+
+
+class TransactionViewSerializer(serializers.ModelSerializer):
+    user = ShortUserSerializer(read_only=True)
+    warehouse = ShortWarehouseSerializer(read_only=True)
+    product = ShortProductSerializer(read_only=True)
+
+    class Meta:
+        model = Transaction
+        fields = ['id', 'timestamp', 'user', 'warehouse',
+                  'product', 'transaction_type', 'quantity']
+        read_only_fields = ['id', 'timestamp']
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['id', 'timestamp', 'user', 'warehouse',
+                  'product', 'transaction_type', 'quantity']
+        read_only_fields = ['id', 'timestamp']

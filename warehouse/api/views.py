@@ -1,26 +1,25 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 
-from api.serializers import ProductSerializer, UserSerializer, WarehouseSerializer
-from api.models import ApiUser, Product, Warehouse
+from api.serializers import ProductSerializer, StockSerializer, TransactionSerializer, TransactionViewSerializer, UserSerializer, WarehouseSerializer
+from api.models import ApiUser, Product, Stock, Transaction, Warehouse
 
 
-# @api_view(['POST'])
-# def register(request):
-#     serializer = UserSerializer(data=request.data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserRegistrationViewSet(viewsets.ModelViewSet):
+    queryset = ApiUser .objects.all()
+    serializer_class = UserSerializer
+    http_method_names = ['post']
+    permission_classes = [permissions.AllowAny]
 
 
 class UserModelViewSet(viewsets.ModelViewSet):
     queryset = ApiUser.objects.all()
     serializer_class = UserSerializer
     http_method_names = ['post', 'get']
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class WarehouseModelViewSet(viewsets.ModelViewSet):
@@ -35,12 +34,28 @@ class ProductModelViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class ProductSupplyViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+class TransactionCreateView(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+
     permission_classes = [permissions.IsAuthenticated]
 
-    def update_amount(self, serializer):
-        if self.request.user.user_type != 'supplier':
-            return Response({'error': 'You are not a supplier'}, status=403)
-        serializer.save()
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return TransactionViewSerializer
+        elif self.request.method == 'POST':
+            return TransactionSerializer
+        return ProductSerializer
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(user=user)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=400)
+
+
+class StockViewSet(viewsets.ModelViewSet):
+    queryset = Stock.objects.all()
+    serializer_class = StockSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get']
